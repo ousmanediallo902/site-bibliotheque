@@ -123,4 +123,8 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    'remote_url' => env('REMOTE_URL'),
+
 ];
+
+

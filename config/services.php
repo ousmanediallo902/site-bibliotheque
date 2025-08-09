@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'remote_api' => [
+    'base_uri' => env('API_ENDPOINT'),
+    'timeout' => 30,
+    'verify' => false
+],
+
 ];

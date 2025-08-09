@@ -15,7 +15,7 @@
             <div class="row">
                 <div class="col-md-8">
                     <h3>{{ $ouvrage->titre }}</h3>
-                    <p class="text-muted">Par {{ $ouvrage->auteur->nom_auteur }}</p>
+                    <p class="text-muted">Par {{ $ouvrage->auteur }}</p>
                     <hr>
 
                     <div class="row">

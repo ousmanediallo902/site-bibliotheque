@@ -7,6 +7,9 @@ use App\Models\Ouvrage;
 use App\Models\Auteur;
 use App\Models\Bibliotheque;
 use Illuminate\Http\Request;
+use App\Services\RemoteLibrary;
+use GuzzleHttp\Client;
+use Illuminate\Support\Facades\Http;
 
 class OuvrageController extends Controller
 {
@@ -19,7 +22,22 @@ class OuvrageController extends Controller
                          ->orderBy('titre')
                          ->paginate(10);
         
-        return view('ouvrages.index', compact('ouvrages'));
+       // Ouvrages distants
+
+     $client = new Client();
+
+    try {
+        $response = $client->get('http://172.20.10.2:8000/api/ouvrages');
+        $json = json_decode($response->getBody(), true);
+        $remoteOuvrages = $json['data'] ?? [];
+    } catch (\Exception $e) {
+        $remoteOuvrages = [];
+    }
+    
+    return view('ouvrages.index', [
+        'ouvrages' => $ouvrages,
+        'remoteOuvrages' => $remoteOuvrages
+    ]);
     }
 
     /**
@@ -112,4 +130,20 @@ class OuvrageController extends Controller
         return redirect()->route('ouvrages.index')
                          ->with('success', 'Ouvrage supprimé avec succès.');
     }
+
+
+    /**
+ * Récupère les ouvrages de l'autre université via API
+ */
+public function apiIndex()
+{
+    return response()->json([
+        'data' => Ouvrage::with(['auteur', 'bibliotheque'])->get(),
+        'success' => true
+    ]);
+}
+
+
+
+
 }

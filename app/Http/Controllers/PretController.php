@@ -8,6 +8,7 @@ use App\Models\Ouvrage;
 use App\Models\Etudiant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use GuzzleHttp\Client;
 
 class PretController extends Controller
 {
@@ -26,22 +27,59 @@ class PretController extends Controller
     /**
      * Affiche le formulaire de création
      */
-    public function create()
-    {
-        $ouvrages = Ouvrage::where('stock', '>', 0)
-                         ->orderBy('titre')
-                         ->get();
-        
-        $etudiants = Etudiant::orderBy('nom')->get();
-        
-        return view('prets.create', compact('ouvrages', 'etudiants'));
+  public function create()
+{
+    // Chargement des ouvrages locaux
+    $ouvragesLocaux = Ouvrage::where('stock', '>', 0)
+                            ->orderBy('titre')
+                            ->get()
+                            ->map(function ($ouvrage) {
+                                return [
+                                    'idOuv' => $ouvrage->idOuv,
+                                    'titre' => $ouvrage->titre,
+                                    'auteur' => is_array($ouvrage->auteur) ? $ouvrage->auteur : $ouvrage->auteur->nom_auteur ?? $ouvrage->auteur,
+                                    'stock' => $ouvrage->stock,
+                                     'site' => 'UADB',
+                                ];
+                            })->toArray();
+
+    // Chargement des ouvrages externes via API (exemple avec GuzzleHttp)
+    $ouvragesExternes = [];
+    try {
+        $client = new \GuzzleHttp\Client();
+        $response = $client->get('http://172.20.10.2:8000/api/ouvrages');
+        $json = json_decode($response->getBody(), true);
+        if (isset($json['data'])) {
+            $ouvragesExternes = array_map(function($ouvrage) {
+                return [
+                    'idOuv' => $ouvrage['idOuv'],
+                    'titre' => $ouvrage['titre'],
+                    'auteur' => is_array($ouvrage['auteur']) ? ($ouvrage['auteur']['nom_auteur'] ?? '') : $ouvrage['auteur'],
+                    'stock' => $ouvrage['stock'] ?? 1,  // on suppose 1 si stock pas précisé pour externe
+                    'site' => 'UGB',
+                ];
+            }, $json['data']);
+        }
+    } catch (\Exception $e) {
+        // gérer erreur API ou absence de connexion
+        $ouvragesExternes = [];
     }
+
+    // Fusionner les deux listes
+    $ouvrages = array_merge($ouvragesLocaux, $ouvragesExternes);
+
+    $etudiants = Etudiant::orderBy('nom')->get();
+
+    return view('prets.create', compact('ouvrages', 'etudiants'));
+}
 
     /**
      * Enregistre un nouveau prêt
      */
-    public function store(Request $request)
+ public function store(Request $request)
     {
+        // dd($request->all());
+
         $validated = $request->validate([
             'ouvg' => 'required|exists:ouvrages,idOuv',
             'etud' => 'required|exists:etudiants,idEtud',
@@ -78,6 +116,7 @@ class PretController extends Controller
         return redirect()->route('prets.index')
                          ->with('success', 'Prêt enregistré avec succès.');
     }
+
 
     /**
      * Affiche les détails d'un prêt

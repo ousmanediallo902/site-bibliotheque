@@ -67,10 +67,10 @@
                         <div class="card-body">
                             <ul class="list-group list-group-flush">
                                 <li class="list-group-item">
-                                    <strong>Bibliothèque:</strong> {{ $employe->bibliotheque->nom }}
+                                    <strong>Bibliothèque:</strong> {{ $employe->bibliotheque }}
                                 </li>
                                 <li class="list-group-item">
-                                    <strong>Université:</strong> {{ $employe->bibliotheque->universite }}
+                                    <strong>Statut:</strong> {{ $employe->statut }}
                                 </li>
                             </ul>
                         </div>
